@@ -17,6 +17,8 @@ import styles from '@/pages/AiProvidersPage.module.scss';
 import { ProviderList } from '../ProviderList';
 import { ProviderStatusBar } from '../ProviderStatusBar';
 import { getOpenAIProviderStats, getStatsBySource } from '../utils';
+import type { OpenAIFormState } from '../types';
+import { OpenAIModal } from './OpenAIModal';
 
 interface OpenAISectionProps {
   configs: OpenAIProviderConfig[];
@@ -24,11 +26,16 @@ interface OpenAISectionProps {
   usageDetails: UsageDetail[];
   loading: boolean;
   disableControls: boolean;
+  isSaving: boolean;
   isSwitching: boolean;
   resolvedTheme: string;
+  isModalOpen: boolean;
+  modalIndex: number | null;
   onAdd: () => void;
   onEdit: (index: number) => void;
   onDelete: (index: number) => void;
+  onCloseModal: () => void;
+  onSave: (data: OpenAIFormState, index: number | null) => Promise<void>;
 }
 
 export function OpenAISection({
@@ -37,14 +44,19 @@ export function OpenAISection({
   usageDetails,
   loading,
   disableControls,
+  isSaving,
   isSwitching,
   resolvedTheme,
+  isModalOpen,
+  modalIndex,
   onAdd,
   onEdit,
   onDelete,
+  onCloseModal,
+  onSave,
 }: OpenAISectionProps) {
   const { t } = useTranslation();
-  const actionsDisabled = disableControls || loading || isSwitching;
+  const actionsDisabled = disableControls || isSaving || isSwitching;
 
   const statusBarCache = useMemo(() => {
     const cache = new Map<string, ReturnType<typeof calculateStatusBarData>>();
@@ -64,6 +76,8 @@ export function OpenAISection({
 
     return cache;
   }, [configs, usageDetails]);
+
+  const initialData = modalIndex !== null ? configs[modalIndex] : undefined;
 
   return (
     <>
@@ -190,6 +204,15 @@ export function OpenAISection({
           }}
         />
       </Card>
+
+      <OpenAIModal
+        isOpen={isModalOpen}
+        editIndex={modalIndex}
+        initialData={initialData}
+        onClose={onCloseModal}
+        onSave={onSave}
+        isSaving={isSaving}
+      />
     </>
   );
 }

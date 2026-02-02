@@ -79,9 +79,6 @@
 }
 
 .filterTag {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
   padding: 6px 14px;
   border-radius: 20px;
   font-size: 13px;
@@ -98,16 +95,6 @@
 
 .filterTagActive {
   font-weight: 600;
-}
-
-.filterTagLabel {
-  white-space: nowrap;
-}
-
-.filterTagCount {
-  font-size: 12px;
-  font-weight: 600;
-  opacity: 0.85;
 }
 
 .filterControls {

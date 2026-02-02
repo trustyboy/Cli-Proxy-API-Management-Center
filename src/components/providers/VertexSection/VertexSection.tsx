@@ -15,6 +15,8 @@ import styles from '@/pages/AiProvidersPage.module.scss';
 import { ProviderList } from '../ProviderList';
 import { ProviderStatusBar } from '../ProviderStatusBar';
 import { getStatsBySource } from '../utils';
+import type { VertexFormState } from '../types';
+import { VertexModal } from './VertexModal';
 
 interface VertexSectionProps {
   configs: ProviderKeyConfig[];
@@ -22,10 +24,15 @@ interface VertexSectionProps {
   usageDetails: UsageDetail[];
   loading: boolean;
   disableControls: boolean;
+  isSaving: boolean;
   isSwitching: boolean;
+  isModalOpen: boolean;
+  modalIndex: number | null;
   onAdd: () => void;
   onEdit: (index: number) => void;
   onDelete: (index: number) => void;
+  onCloseModal: () => void;
+  onSave: (data: VertexFormState, index: number | null) => Promise<void>;
 }
 
 export function VertexSection({
@@ -34,13 +41,18 @@ export function VertexSection({
   usageDetails,
   loading,
   disableControls,
+  isSaving,
   isSwitching,
+  isModalOpen,
+  modalIndex,
   onAdd,
   onEdit,
   onDelete,
+  onCloseModal,
+  onSave,
 }: VertexSectionProps) {
   const { t } = useTranslation();
-  const actionsDisabled = disableControls || loading || isSwitching;
+  const actionsDisabled = disableControls || isSaving || isSwitching;
 
   const statusBarCache = useMemo(() => {
     const cache = new Map<string, ReturnType<typeof calculateStatusBarData>>();
@@ -59,6 +71,8 @@ export function VertexSection({
 
     return cache;
   }, [configs, usageDetails]);
+
+  const initialData = modalIndex !== null ? configs[modalIndex] : undefined;
 
   return (
     <>
@@ -154,6 +168,15 @@ export function VertexSection({
           }}
         />
       </Card>
+
+      <VertexModal
+        isOpen={isModalOpen}
+        editIndex={modalIndex}
+        initialData={initialData}
+        onClose={onCloseModal}
+        onSave={onSave}
+        isSaving={isSaving}
+      />
     </>
   );
 }

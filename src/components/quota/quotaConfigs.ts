@@ -45,7 +45,6 @@ import {
   getStatusFromError,
   isAntigravityFile,
   isCodexFile,
-  isDisabledAuthFile,
   isGeminiCliFile,
   isRuntimeOnlyAuthFile
 } from '@/utils/quota';
@@ -117,6 +116,11 @@ const resolveAntigravityProjectId = async (file: AuthFileItem): Promise<string> 
   return DEFAULT_ANTIGRAVITY_PROJECT_ID;
 };
 
+const isAntigravityUnknownFieldError = (message: string): boolean => {
+  const normalized = message.toLowerCase();
+  return normalized.includes('unknown name') && normalized.includes('cannot find field');
+};
+
 const fetchAntigravityQuota = async (
   file: AuthFileItem,
   t: TFunction
@@ -128,7 +132,7 @@ const fetchAntigravityQuota = async (
   }
 
   const projectId = await resolveAntigravityProjectId(file);
-  const requestBody = JSON.stringify({ project: projectId });
+  const requestBodies = [JSON.stringify({ projectId }), JSON.stringify({ project: projectId })];
 
   let lastError = '';
   let lastStatus: number | undefined;
@@ -136,46 +140,55 @@ const fetchAntigravityQuota = async (
   let hadSuccess = false;
 
   for (const url of ANTIGRAVITY_QUOTA_URLS) {
-    try {
-      const result = await apiCallApi.request({
-        authIndex,
-        method: 'POST',
-        url,
-        header: { ...ANTIGRAVITY_REQUEST_HEADERS },
-        data: requestBody
-      });
+    for (let attempt = 0; attempt < requestBodies.length; attempt++) {
+      try {
+        const result = await apiCallApi.request({
+          authIndex,
+          method: 'POST',
+          url,
+          header: { ...ANTIGRAVITY_REQUEST_HEADERS },
+          data: requestBodies[attempt]
+        });
 
-      if (result.statusCode < 200 || result.statusCode >= 300) {
-        lastError = getApiCallErrorMessage(result);
-        lastStatus = result.statusCode;
-        if (result.statusCode === 403 || result.statusCode === 404) {
-          priorityStatus ??= result.statusCode;
+        if (result.statusCode < 200 || result.statusCode >= 300) {
+          lastError = getApiCallErrorMessage(result);
+          lastStatus = result.statusCode;
+          if (result.statusCode === 403 || result.statusCode === 404) {
+            priorityStatus ??= result.statusCode;
+          }
+          if (
+            result.statusCode === 400 &&
+            isAntigravityUnknownFieldError(lastError) &&
+            attempt < requestBodies.length - 1
+          ) {
+            continue;
+          }
+          break;
         }
-        continue;
-      }
 
-      hadSuccess = true;
-      const payload = parseAntigravityPayload(result.body ?? result.bodyText);
-      const models = payload?.models;
-      if (!models || typeof models !== 'object' || Array.isArray(models)) {
-        lastError = t('antigravity_quota.empty_models');
-        continue;
-      }
+        hadSuccess = true;
+        const payload = parseAntigravityPayload(result.body ?? result.bodyText);
+        const models = payload?.models;
+        if (!models || typeof models !== 'object' || Array.isArray(models)) {
+          lastError = t('antigravity_quota.empty_models');
+          continue;
+        }
 
-      const groups = buildAntigravityQuotaGroups(models as AntigravityModelsPayload);
-      if (groups.length === 0) {
-        lastError = t('antigravity_quota.empty_models');
-        continue;
-      }
+        const groups = buildAntigravityQuotaGroups(models as AntigravityModelsPayload);
+        if (groups.length === 0) {
+          lastError = t('antigravity_quota.empty_models');
+          continue;
+        }
 
-      return groups;
-    } catch (err: unknown) {
-      lastError = err instanceof Error ? err.message : t('common.unknown_error');
-      const status = getStatusFromError(err);
-      if (status) {
-        lastStatus = status;
-        if (status === 403 || status === 404) {
-          priorityStatus ??= status;
+        return groups;
+      } catch (err: unknown) {
+        lastError = err instanceof Error ? err.message : t('common.unknown_error');
+        const status = getStatusFromError(err);
+        if (status) {
+          lastStatus = status;
+          if (status === 403 || status === 404) {
+            priorityStatus ??= status;
+          }
         }
       }
     }
@@ -520,7 +533,7 @@ const renderGeminiCliItems = (
 export const ANTIGRAVITY_CONFIG: QuotaConfig<AntigravityQuotaState, AntigravityQuotaGroup[]> = {
   type: 'antigravity',
   i18nPrefix: 'antigravity_quota',
-  filterFn: (file) => isAntigravityFile(file) && !isDisabledAuthFile(file),
+  filterFn: (file) => isAntigravityFile(file),
   fetchQuota: fetchAntigravityQuota,
   storeSelector: (state) => state.antigravityQuota,
   storeSetter: 'setAntigravityQuota',
@@ -545,7 +558,7 @@ export const CODEX_CONFIG: QuotaConfig<
 > = {
   type: 'codex',
   i18nPrefix: 'codex_quota',
-  filterFn: (file) => isCodexFile(file) && !isDisabledAuthFile(file),
+  filterFn: (file) => isCodexFile(file),
   fetchQuota: fetchCodexQuota,
   storeSelector: (state) => state.codexQuota,
   storeSetter: 'setCodexQuota',
@@ -571,8 +584,7 @@ export const CODEX_CONFIG: QuotaConfig<
 export const GEMINI_CLI_CONFIG: QuotaConfig<GeminiCliQuotaState, GeminiCliQuotaBucketState[]> = {
   type: 'gemini-cli',
   i18nPrefix: 'gemini_cli_quota',
-  filterFn: (file) =>
-    isGeminiCliFile(file) && !isRuntimeOnlyAuthFile(file) && !isDisabledAuthFile(file),
+  filterFn: (file) => isGeminiCliFile(file) && !isRuntimeOnlyAuthFile(file),
   fetchQuota: fetchGeminiCliQuota,
   storeSelector: (state) => state.geminiCliQuota,
   storeSetter: 'setGeminiCliQuota',

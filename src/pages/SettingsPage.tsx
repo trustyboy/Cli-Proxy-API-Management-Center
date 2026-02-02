@@ -97,7 +97,7 @@ export function SettingsPage() {
         setRoutingStrategy(config.routingStrategy);
       }
     }
-  }, [config]);
+  }, [config?.proxyUrl, config?.requestRetry, config?.logsMaxTotalSizeMb, config?.routingStrategy]);
 
   const setPendingFlag = (key: PendingKey, value: boolean) => {
     setPending((prev) => ({ ...prev, [key]: value }));

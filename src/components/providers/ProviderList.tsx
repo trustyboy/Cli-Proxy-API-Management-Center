@@ -34,7 +34,7 @@ export function ProviderList<T>({
 }: ProviderListProps<T>) {
   const { t } = useTranslation();
 
-  if (loading && items.length === 0) {
+  if (loading) {
     return <div className="hint">{t('common.loading')}</div>;
   }
 

@@ -5,24 +5,34 @@ import type { AmpcodeConfig } from '@/types';
 import { maskApiKey } from '@/utils/format';
 import styles from '@/pages/AiProvidersPage.module.scss';
 import { useTranslation } from 'react-i18next';
+import { AmpcodeModal } from './AmpcodeModal';
 
 interface AmpcodeSectionProps {
   config: AmpcodeConfig | null | undefined;
   loading: boolean;
   disableControls: boolean;
+  isSaving: boolean;
   isSwitching: boolean;
-  onEdit: () => void;
+  isBusy: boolean;
+  isModalOpen: boolean;
+  onOpen: () => void;
+  onCloseModal: () => void;
+  onBusyChange: (busy: boolean) => void;
 }
 
 export function AmpcodeSection({
   config,
   loading,
   disableControls,
+  isSaving,
   isSwitching,
-  onEdit,
+  isBusy,
+  isModalOpen,
+  onOpen,
+  onCloseModal,
+  onBusyChange,
 }: AmpcodeSectionProps) {
   const { t } = useTranslation();
-  const showLoadingPlaceholder = loading && !config;
 
   return (
     <>
@@ -36,14 +46,14 @@ export function AmpcodeSection({
         extra={
           <Button
             size="sm"
-            onClick={onEdit}
-            disabled={disableControls || loading || isSwitching}
+            onClick={onOpen}
+            disabled={disableControls || isSaving || isBusy || isSwitching}
           >
             {t('common.edit')}
           </Button>
         }
       >
-        {showLoadingPlaceholder ? (
+        {loading ? (
           <div className="hint">{t('common.loading')}</div>
         ) : (
           <>
@@ -89,6 +99,13 @@ export function AmpcodeSection({
           </>
         )}
       </Card>
+
+      <AmpcodeModal
+        isOpen={isModalOpen}
+        disableControls={disableControls}
+        onClose={onCloseModal}
+        onBusyChange={onBusyChange}
+      />
     </>
   );
 }
