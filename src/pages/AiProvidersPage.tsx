@@ -7,6 +7,7 @@ import {
   CodexSection,
   GeminiSection,
   OpenAISection,
+  ProviderNav,
   VertexSection,
   useProviderStats,
   type GeminiFormState,
@@ -539,109 +540,123 @@ export function AiProvidersPage() {
       <div className={styles.content}>
         {error && <div className="error-box">{error}</div>}
 
-        <GeminiSection
-          configs={geminiKeys}
-          keyStats={keyStats}
-          usageDetails={usageDetails}
-          loading={loading}
-          disableControls={disableControls}
-          isSaving={saving}
-          isSwitching={isSwitching}
-          isModalOpen={modal?.type === 'gemini'}
-          modalIndex={geminiModalIndex}
-          onAdd={() => openGeminiModal(null)}
-          onEdit={(index) => openGeminiModal(index)}
-          onDelete={deleteGemini}
-          onToggle={(index, enabled) => void setConfigEnabled('gemini', index, enabled)}
-          onCloseModal={closeModal}
-          onSave={saveGemini}
-        />
+        <div id="provider-gemini">
+          <GeminiSection
+            configs={geminiKeys}
+            keyStats={keyStats}
+            usageDetails={usageDetails}
+            loading={loading}
+            disableControls={disableControls}
+            isSaving={saving}
+            isSwitching={isSwitching}
+            isModalOpen={modal?.type === 'gemini'}
+            modalIndex={geminiModalIndex}
+            onAdd={() => openGeminiModal(null)}
+            onEdit={(index) => openGeminiModal(index)}
+            onDelete={deleteGemini}
+            onToggle={(index, enabled) => void setConfigEnabled('gemini', index, enabled)}
+            onCloseModal={closeModal}
+            onSave={saveGemini}
+          />
+        </div>
 
-        <CodexSection
-          configs={codexConfigs}
-          keyStats={keyStats}
-          usageDetails={usageDetails}
-          loading={loading}
-          disableControls={disableControls}
-          isSaving={saving}
-          isSwitching={isSwitching}
-          resolvedTheme={resolvedTheme}
-          isModalOpen={modal?.type === 'codex'}
-          modalIndex={codexModalIndex}
-          onAdd={() => openProviderModal('codex', null)}
-          onEdit={(index) => openProviderModal('codex', index)}
-          onDelete={(index) => void deleteProviderEntry('codex', index)}
-          onToggle={(index, enabled) => void setConfigEnabled('codex', index, enabled)}
-          onCloseModal={closeModal}
-          onSave={(form, editIndex) => saveProvider('codex', form, editIndex)}
-        />
+        <div id="provider-codex">
+          <CodexSection
+            configs={codexConfigs}
+            keyStats={keyStats}
+            usageDetails={usageDetails}
+            loading={loading}
+            disableControls={disableControls}
+            isSaving={saving}
+            isSwitching={isSwitching}
+            resolvedTheme={resolvedTheme}
+            isModalOpen={modal?.type === 'codex'}
+            modalIndex={codexModalIndex}
+            onAdd={() => openProviderModal('codex', null)}
+            onEdit={(index) => openProviderModal('codex', index)}
+            onDelete={(index) => void deleteProviderEntry('codex', index)}
+            onToggle={(index, enabled) => void setConfigEnabled('codex', index, enabled)}
+            onCloseModal={closeModal}
+            onSave={(form, editIndex) => saveProvider('codex', form, editIndex)}
+          />
+        </div>
 
-        <ClaudeSection
-          configs={claudeConfigs}
-          keyStats={keyStats}
-          usageDetails={usageDetails}
-          loading={loading}
-          disableControls={disableControls}
-          isSaving={saving}
-          isSwitching={isSwitching}
-          isModalOpen={modal?.type === 'claude'}
-          modalIndex={claudeModalIndex}
-          onAdd={() => openProviderModal('claude', null)}
-          onEdit={(index) => openProviderModal('claude', index)}
-          onDelete={(index) => void deleteProviderEntry('claude', index)}
-          onToggle={(index, enabled) => void setConfigEnabled('claude', index, enabled)}
-          onCloseModal={closeModal}
-          onSave={(form, editIndex) => saveProvider('claude', form, editIndex)}
-        />
+        <div id="provider-claude">
+          <ClaudeSection
+            configs={claudeConfigs}
+            keyStats={keyStats}
+            usageDetails={usageDetails}
+            loading={loading}
+            disableControls={disableControls}
+            isSaving={saving}
+            isSwitching={isSwitching}
+            isModalOpen={modal?.type === 'claude'}
+            modalIndex={claudeModalIndex}
+            onAdd={() => openProviderModal('claude', null)}
+            onEdit={(index) => openProviderModal('claude', index)}
+            onDelete={(index) => void deleteProviderEntry('claude', index)}
+            onToggle={(index, enabled) => void setConfigEnabled('claude', index, enabled)}
+            onCloseModal={closeModal}
+            onSave={(form, editIndex) => saveProvider('claude', form, editIndex)}
+          />
+        </div>
 
-        <VertexSection
-          configs={vertexConfigs}
-          keyStats={keyStats}
-          usageDetails={usageDetails}
-          loading={loading}
-          disableControls={disableControls}
-          isSaving={saving}
-          isSwitching={isSwitching}
-          isModalOpen={modal?.type === 'vertex'}
-          modalIndex={vertexModalIndex}
-          onAdd={() => openVertexModal(null)}
-          onEdit={(index) => openVertexModal(index)}
-          onDelete={deleteVertex}
-          onCloseModal={closeModal}
-          onSave={saveVertex}
-        />
+        <div id="provider-vertex">
+          <VertexSection
+            configs={vertexConfigs}
+            keyStats={keyStats}
+            usageDetails={usageDetails}
+            loading={loading}
+            disableControls={disableControls}
+            isSaving={saving}
+            isSwitching={isSwitching}
+            isModalOpen={modal?.type === 'vertex'}
+            modalIndex={vertexModalIndex}
+            onAdd={() => openVertexModal(null)}
+            onEdit={(index) => openVertexModal(index)}
+            onDelete={deleteVertex}
+            onCloseModal={closeModal}
+            onSave={saveVertex}
+          />
+        </div>
 
-        <AmpcodeSection
-          config={config?.ampcode}
-          loading={loading}
-          disableControls={disableControls}
-          isSaving={saving}
-          isSwitching={isSwitching}
-          isBusy={ampcodeBusy}
-          isModalOpen={modal?.type === 'ampcode'}
-          onOpen={openAmpcodeModal}
-          onCloseModal={closeModal}
-          onBusyChange={setAmpcodeBusy}
-        />
+        <div id="provider-ampcode">
+          <AmpcodeSection
+            config={config?.ampcode}
+            loading={loading}
+            disableControls={disableControls}
+            isSaving={saving}
+            isSwitching={isSwitching}
+            isBusy={ampcodeBusy}
+            isModalOpen={modal?.type === 'ampcode'}
+            onOpen={openAmpcodeModal}
+            onCloseModal={closeModal}
+            onBusyChange={setAmpcodeBusy}
+          />
+        </div>
 
-        <OpenAISection
-          configs={openaiProviders}
-          keyStats={keyStats}
-          usageDetails={usageDetails}
-          loading={loading}
-          disableControls={disableControls}
-          isSaving={saving}
-          isSwitching={isSwitching}
-          resolvedTheme={resolvedTheme}
-          isModalOpen={modal?.type === 'openai'}
-          modalIndex={openaiModalIndex}
-          onAdd={() => openOpenaiModal(null)}
-          onEdit={(index) => openOpenaiModal(index)}
-          onDelete={deleteOpenai}
-          onCloseModal={closeModal}
-          onSave={saveOpenai}
-        />
+        <div id="provider-openai">
+          <OpenAISection
+            configs={openaiProviders}
+            keyStats={keyStats}
+            usageDetails={usageDetails}
+            loading={loading}
+            disableControls={disableControls}
+            isSaving={saving}
+            isSwitching={isSwitching}
+            resolvedTheme={resolvedTheme}
+            isModalOpen={modal?.type === 'openai'}
+            modalIndex={openaiModalIndex}
+            onAdd={() => openOpenaiModal(null)}
+            onEdit={(index) => openOpenaiModal(index)}
+            onDelete={deleteOpenai}
+            onCloseModal={closeModal}
+            onSave={saveOpenai}
+          />
+        </div>
       </div>
+
+      <ProviderNav />
     </div>
   );
 }
