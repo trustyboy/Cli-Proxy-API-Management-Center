@@ -18,6 +18,7 @@ import {
   IconFileText,
   IconInfo,
   IconLayoutDashboard,
+  IconSatellite,
   IconScrollText,
   IconSettings,
   IconShield,
@@ -45,6 +46,7 @@ const sidebarIcons: Record<string, ReactNode> = {
   usage: <IconChartLine size={18} />,
   config: <IconSettings size={18} />,
   logs: <IconScrollText size={18} />,
+  modelAvailability: <IconSatellite size={18} />,
   system: <IconInfo size={18} />,
 };
 
@@ -359,6 +361,7 @@ export function MainLayout() {
     ...(config?.loggingToFile
       ? [{ path: '/logs', label: t('nav.logs'), icon: sidebarIcons.logs }]
       : []),
+    { path: '/model-availability', label: t('nav.model_availability'), icon: sidebarIcons.modelAvailability },
     { path: '/system', label: t('nav.system_info'), icon: sidebarIcons.system },
   ];
   const navOrder = navItems.map((item) => item.path);

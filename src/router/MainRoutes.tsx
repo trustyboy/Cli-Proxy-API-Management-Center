@@ -17,6 +17,7 @@ import { QuotaPage } from '@/pages/QuotaPage';
 import { UsagePage } from '@/pages/UsagePage';
 import { ConfigPage } from '@/pages/ConfigPage';
 import { LogsPage } from '@/pages/LogsPage';
+import { ModelAvailabilityPage } from '@/pages/ModelAvailabilityPage';
 import { SystemPage } from '@/pages/SystemPage';
 
 const mainRoutes = [
@@ -59,6 +60,7 @@ const mainRoutes = [
   { path: '/usage', element: <UsagePage /> },
   { path: '/config', element: <ConfigPage /> },
   { path: '/logs', element: <LogsPage /> },
+  { path: '/model-availability', element: <ModelAvailabilityPage /> },
   { path: '/system', element: <SystemPage /> },
   { path: '*', element: <Navigate to="/" replace /> },
 ];

@@ -104,6 +104,7 @@
     "usage_stats": "Usage Statistics",
     "config_management": "Config Panel",
     "logs": "Logs Viewer",
+    "model_availability": "Model Availability",
     "system_info": "Management Center Info"
   },
   "dashboard": {
@@ -126,6 +127,26 @@
     "edit_settings": "Edit Settings",
     "available_models": "Available Models",
     "available_models_desc": "Total models from all providers"
+  },
+  "model_availability": {
+    "title": "Model Availability",
+    "subtitle": "Currently Unavailable Models",
+    "model_name": "Model Name",
+    "provider": "Provider",
+    "client": "Credential",
+    "reason": "Reason",
+    "since": "Since",
+    "actions": "Actions",
+    "reset": "Reset",
+    "reset_success": "Reset availability for model {{model}}",
+    "reset_error": "Reset failed",
+    "fetch_error": "Failed to fetch unavailable models",
+    "no_unavailable": "All Models Available",
+    "no_unavailable_desc": "No models are currently unavailable",
+    "reason_quota_exceeded": "Quota Exceeded",
+    "reason_suspended": "Suspended",
+    "reason_cooldown": "Cooling Down",
+    "unavailable_count": "Unavailable Models: {{count}}"
   },
   "basic_settings": {
     "title": "Basic Settings",
