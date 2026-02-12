@@ -942,7 +942,27 @@
           "logging_to_file_desc": "Save logs to files",
           "usage_statistics": "Usage Statistics",
           "usage_statistics_desc": "Collect usage statistics",
+          "redis_cache": "Redis Cache",
+          "redis_cache_desc": "Use Redis to cache statistics data for persistence across service restarts",
+          "redis_addr": "Redis Address",
+          "redis_password": "Redis Password",
+          "redis_password_placeholder": "Leave empty for no password",
+          "redis_db": "Redis Database Number",
+          "redis_ttl": "Cache TTL (seconds)",
+          "redis_ttl_hint": "Statistics expiration time, default 86400 seconds (1 day)",
           "logs_max_size": "Log File Size Limit (MB)"
+        },
+        "redis_cache": {
+          "title": "Redis Cache",
+          "description": "Use Redis to cache usage statistics data for persistence across service restarts",
+          "enable": "Enable Redis Cache",
+          "enable_desc": "Use Redis to cache statistics data for persistence across service restarts",
+          "addr": "Redis Address",
+          "password": "Redis Password",
+          "password_placeholder": "Leave empty for no password",
+          "db": "Redis Database Number",
+          "ttl": "Cache TTL (seconds)",
+          "ttl_hint": "Statistics expiration time, default 86400 seconds (1 day)"
         },
         "network": {
           "title": "Network Configuration",

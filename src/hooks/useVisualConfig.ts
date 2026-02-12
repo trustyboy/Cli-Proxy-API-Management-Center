@@ -4,6 +4,7 @@ import type {
   PayloadFilterRule,
   PayloadParamValueType,
   PayloadRule,
+  RedisCacheConfig,
   VisualConfigValues,
 } from '@/types/visualConfig';
 import { DEFAULT_VISUAL_VALUES } from '@/types/visualConfig';
@@ -138,6 +139,54 @@ function parsePayloadProtocol(raw: unknown): PayloadProtocol | undefined {
   return PAYLOAD_PROTOCOL_VALUES.includes(raw as PayloadProtocol)
     ? (raw as PayloadProtocol)
     : undefined;
+}
+
+function parseRedisCacheConfig(raw: unknown): RedisCacheConfig {
+  const defaultConfig: RedisCacheConfig = {
+    enable: false,
+    addr: '',
+    password: '',
+    db: '0',
+    keyPrefix: 'cliproxy:usage:',
+    ttl: '86400',
+  };
+  if (!raw) return defaultConfig;
+  const record = asRecord(raw);
+  if (!record) return defaultConfig;
+  return {
+    enable: Boolean(record.enable),
+    addr: typeof record.addr === 'string' ? record.addr : '',
+    password: typeof record.password === 'string' ? record.password : '',
+    db: typeof record.db === 'string' ? String(record.db) : String(record.db ?? '0'),
+    keyPrefix: typeof record['key-prefix'] === 'string' ? record['key-prefix'] : 'cliproxy:usage:',
+    ttl: typeof record.ttl === 'string' ? String(record.ttl) : String(record.ttl ?? '86400'),
+  };
+}
+
+function serializeRedisCacheConfig(config: RedisCacheConfig): Record<string, unknown> | undefined {
+  if (!config) return undefined;
+  // Only save if any non-default value is set
+  if (
+    !config.enable &&
+    !config.addr &&
+    !config.password &&
+    config.db === '0' &&
+    config.keyPrefix === 'cliproxy:usage:' &&
+    config.ttl === '86400'
+  ) {
+    return undefined;
+  }
+  const result: Record<string, unknown> = {
+    enable: config.enable,
+  };
+  if (config.enable) {
+    if (config.addr) result.addr = config.addr;
+    if (config.password) result.password = config.password;
+    if (config.db !== '0') result.db = parseInt(config.db, 10) || 0;
+    if (config.keyPrefix && config.keyPrefix !== 'cliproxy:usage:') result['key-prefix'] = config.keyPrefix;
+    if (config.ttl && config.ttl !== '86400') result.ttl = parseInt(config.ttl, 10) || 86400;
+  }
+  return result;
 }
 
 function parsePayloadRules(rules: unknown): PayloadRule[] {
@@ -315,6 +364,8 @@ export function useVisualConfig() {
         logsMaxTotalSizeMb: String(parsed['logs-max-total-size-mb'] ?? ''),
         usageStatisticsEnabled: Boolean(parsed['usage-statistics-enabled']),
 
+        redisCache: parseRedisCacheConfig(parsed['usage-statistics-cache']),
+
         proxyUrl: typeof parsed['proxy-url'] === 'string' ? parsed['proxy-url'] : '',
         forceModelPrefix: Boolean(parsed['force-model-prefix']),
         requestRetry: String(parsed['request-retry'] ?? ''),
@@ -406,6 +457,13 @@ export function useVisualConfig() {
         setIntFromString(parsed, 'logs-max-total-size-mb', values.logsMaxTotalSizeMb);
         setBoolean(parsed, 'usage-statistics-enabled', values.usageStatisticsEnabled);
 
+        const redisCacheConfig = serializeRedisCacheConfig(values.redisCache);
+        if (redisCacheConfig !== undefined) {
+          parsed['usage-statistics-cache'] = redisCacheConfig;
+        } else if (hasOwn(parsed, 'usage-statistics-cache')) {
+          delete parsed['usage-statistics-cache'];
+        }
+
         setString(parsed, 'proxy-url', values.proxyUrl);
         setBoolean(parsed, 'force-model-prefix', values.forceModelPrefix);
         setIntFromString(parsed, 'request-retry', values.requestRetry);
@@ -483,6 +541,9 @@ export function useVisualConfig() {
       const next: VisualConfigValues = { ...prev, ...newValues } as VisualConfigValues;
       if (newValues.streaming) {
         next.streaming = { ...prev.streaming, ...newValues.streaming };
+      }
+      if (newValues.redisCache) {
+        next.redisCache = { ...prev.redisCache, ...newValues.redisCache };
       }
       return next;
     });

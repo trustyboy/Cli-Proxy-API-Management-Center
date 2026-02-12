@@ -31,6 +31,15 @@ export interface StreamingConfig {
   nonstreamKeepaliveInterval: string;
 }
 
+export interface RedisCacheConfig {
+  enable: boolean;
+  addr: string;
+  password: string;
+  db: string;
+  keyPrefix: string;
+  ttl: string;
+}
+
 export type VisualConfigValues = {
   host: string;
   port: string;
@@ -48,6 +57,7 @@ export type VisualConfigValues = {
   loggingToFile: boolean;
   logsMaxTotalSizeMb: string;
   usageStatisticsEnabled: boolean;
+  redisCache: RedisCacheConfig;
   proxyUrl: string;
   forceModelPrefix: boolean;
   requestRetry: string;
@@ -84,6 +94,14 @@ export const DEFAULT_VISUAL_VALUES: VisualConfigValues = {
   loggingToFile: false,
   logsMaxTotalSizeMb: '',
   usageStatisticsEnabled: false,
+  redisCache: {
+    enable: false,
+    addr: '',
+    password: '',
+    db: '0',
+    keyPrefix: 'cliproxy:usage:',
+    ttl: '86400',
+  },
   proxyUrl: '',
   forceModelPrefix: false,
   requestRetry: '',

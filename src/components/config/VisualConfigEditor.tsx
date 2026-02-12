@@ -961,6 +961,56 @@ export function VisualConfigEditor({ values, disabled = false, onChange }: Visua
         </div>
       </ConfigSection>
 
+      <ConfigSection title={t('config_management.visual.sections.redis_cache.title')} description={t('config_management.visual.sections.redis_cache.description')}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <ToggleRow
+            title={t('config_management.visual.sections.redis_cache.enable')}
+            description={t('config_management.visual.sections.redis_cache.enable_desc')}
+            checked={values.redisCache.enable}
+            disabled={disabled}
+            onChange={(enable) => onChange({ redisCache: { ...values.redisCache, enable } })}
+          />
+          {values.redisCache.enable && (
+            <>
+              <SectionGrid>
+                <Input
+                  label={t('config_management.visual.sections.redis_cache.addr')}
+                  placeholder="localhost:6379"
+                  value={values.redisCache.addr}
+                  onChange={(e) => onChange({ redisCache: { ...values.redisCache, addr: e.target.value } })}
+                  disabled={disabled}
+                />
+                <Input
+                  label={t('config_management.visual.sections.redis_cache.password')}
+                  type="password"
+                  placeholder={t('config_management.visual.sections.redis_cache.password_placeholder')}
+                  value={values.redisCache.password}
+                  onChange={(e) => onChange({ redisCache: { ...values.redisCache, password: e.target.value } })}
+                  disabled={disabled}
+                />
+              </SectionGrid>
+              <SectionGrid>
+                <Input
+                  label={t('config_management.visual.sections.redis_cache.db')}
+                  placeholder="0"
+                  value={values.redisCache.db}
+                  onChange={(e) => onChange({ redisCache: { ...values.redisCache, db: e.target.value } })}
+                  disabled={disabled}
+                />
+                <Input
+                  label={t('config_management.visual.sections.redis_cache.ttl')}
+                  placeholder="86400"
+                  value={values.redisCache.ttl}
+                  onChange={(e) => onChange({ redisCache: { ...values.redisCache, ttl: e.target.value } })}
+                  disabled={disabled}
+                  hint={t('config_management.visual.sections.redis_cache.ttl_hint')}
+                />
+              </SectionGrid>
+            </>
+          )}
+        </div>
+      </ConfigSection>
+
       <ConfigSection title={t('config_management.visual.sections.network.title')} description={t('config_management.visual.sections.network.description')}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <SectionGrid>

@@ -942,7 +942,27 @@
           "logging_to_file_desc": "将日志保存到文件",
           "usage_statistics": "使用统计",
           "usage_statistics_desc": "收集使用统计信息",
+          "redis_cache": "Redis 缓存",
+          "redis_cache_desc": "使用 Redis 缓存统计数据，支持服务重启后数据持久化",
+          "redis_addr": "Redis 地址",
+          "redis_password": "Redis 密码",
+          "redis_password_placeholder": "留空表示无密码",
+          "redis_db": "Redis 数据库编号",
+          "redis_ttl": "缓存过期时间 (秒)",
+          "redis_ttl_hint": "统计数据过期时间，默认 86400 秒 (1天)",
           "logs_max_size": "日志文件大小限制 (MB)"
+        },
+        "redis_cache": {
+          "title": "Redis 缓存",
+          "description": "使用 Redis 缓存使用统计数据，支持服务重启后数据持久化",
+          "enable": "启用 Redis 缓存",
+          "enable_desc": "使用 Redis 缓存统计数据，支持服务重启后数据持久化",
+          "addr": "Redis 地址",
+          "password": "Redis 密码",
+          "password_placeholder": "留空表示无密码",
+          "db": "Redis 数据库编号",
+          "ttl": "缓存过期时间 (秒)",
+          "ttl_hint": "统计数据过期时间，默认 86400 秒 (1天)"
         },
         "network": {
           "title": "网络配置",
