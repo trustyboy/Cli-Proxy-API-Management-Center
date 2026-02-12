@@ -472,7 +472,7 @@ export function useVisualConfig() {
         if (redisCacheConfig !== undefined) {
           ensureMapInDoc(doc, ['usage-statistics-cache']);
           const cachePath: YamlPath = ['usage-statistics-cache'];
-          if (redisCacheConfig.enable !== undefined) {
+          if (typeof redisCacheConfig.enable === 'boolean') {
             setBooleanInDoc(doc, [...cachePath, 'enable'], redisCacheConfig.enable);
           }
           if (redisCacheConfig.addr) {
