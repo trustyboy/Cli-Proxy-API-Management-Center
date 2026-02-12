@@ -54,8 +54,9 @@ function docHas(doc: YamlDocument, path: YamlPath): boolean {
 
 function ensureMapInDoc(doc: YamlDocument, path: YamlPath): void {
   const existing = doc.getIn(path, true);
-  if (isMap(existing)) return;
-  doc.setIn(path, {});
+  if (existing && isMap(existing)) return;
+  // 必须使用 createNode 创建真正的 YAML map，否则 setIn 嵌套属性会失败
+  doc.setIn(path, doc.createNode({}));
 }
 
 function deleteIfMapEmpty(doc: YamlDocument, path: YamlPath): void {
