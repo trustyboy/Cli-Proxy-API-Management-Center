@@ -773,6 +773,7 @@
     "rpm_30m": "RPM",
     "tpm_30m": "TPM",
     "rate_30m": "近30分钟速率",
+    "range_filter": "时间范围",
     "model_name": "模型名称",
     "model_price_settings": "模型价格设置",
     "saved_prices": "已保存的价格",

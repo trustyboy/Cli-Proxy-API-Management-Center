@@ -773,6 +773,7 @@
     "rpm_30m": "RPM",
     "tpm_30m": "TPM",
     "rate_30m": "Rate (last 30 min)",
+    "range_filter": "Time Range",
     "model_name": "Model Name",
     "model_price_settings": "Model Pricing Settings",
     "saved_prices": "Saved Prices",
