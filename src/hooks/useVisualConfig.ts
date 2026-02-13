@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { isMap, parse as parseYaml, parseDocument } from 'yaml';
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import type {
   PayloadFilterRule,
   PayloadParamValueType,
@@ -8,6 +8,10 @@ import type {
   VisualConfigValues,
 } from '@/types/visualConfig';
 import { DEFAULT_VISUAL_VALUES } from '@/types/visualConfig';
+
+function hasOwn(obj: unknown, key: string): obj is Record<string, unknown> {
+  return obj !== null && typeof obj === 'object' && Object.prototype.hasOwnProperty.call(obj, key);
+}
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -45,59 +49,53 @@ function parseApiKeysText(raw: unknown): string {
   return keys.join('\n');
 }
 
-type YamlDocument = ReturnType<typeof parseDocument>;
-type YamlPath = string[];
-
-function docHas(doc: YamlDocument, path: YamlPath): boolean {
-  return doc.hasIn(path);
+function ensureRecord(parent: Record<string, unknown>, key: string): Record<string, unknown> {
+  const existing = asRecord(parent[key]);
+  if (existing) return existing;
+  const next: Record<string, unknown> = {};
+  parent[key] = next;
+  return next;
 }
 
-function ensureMapInDoc(doc: YamlDocument, path: YamlPath): void {
-  const existing = doc.getIn(path, true);
-  if (existing && isMap(existing)) return;
-  // 必须使用 createNode 创建真正的 YAML map，否则 setIn 嵌套属性会失败
-  doc.setIn(path, doc.createNode({}));
+function deleteIfEmpty(parent: Record<string, unknown>, key: string): void {
+  const value = asRecord(parent[key]);
+  if (!value) return;
+  if (Object.keys(value).length === 0) delete parent[key];
 }
 
-function deleteIfMapEmpty(doc: YamlDocument, path: YamlPath): void {
-  const value = doc.getIn(path, true);
-  if (!isMap(value)) return;
-  if (value.items.length === 0) doc.deleteIn(path);
-}
-
-function setBooleanInDoc(doc: YamlDocument, path: YamlPath, value: boolean): void {
+function setBoolean(obj: Record<string, unknown>, key: string, value: boolean): void {
   if (value) {
-    doc.setIn(path, true);
+    obj[key] = true;
     return;
   }
-  if (docHas(doc, path)) doc.setIn(path, false);
+  if (hasOwn(obj, key)) obj[key] = false;
 }
 
-function setStringInDoc(doc: YamlDocument, path: YamlPath, value: unknown): void {
+function setString(obj: Record<string, unknown>, key: string, value: unknown): void {
   const safe = typeof value === 'string' ? value : '';
   const trimmed = safe.trim();
   if (trimmed !== '') {
-    doc.setIn(path, safe);
+    obj[key] = safe;
     return;
   }
-  if (docHas(doc, path)) doc.deleteIn(path);
+  if (hasOwn(obj, key)) delete obj[key];
 }
 
-function setIntFromStringInDoc(doc: YamlDocument, path: YamlPath, value: unknown): void {
+function setIntFromString(obj: Record<string, unknown>, key: string, value: unknown): void {
   const safe = typeof value === 'string' ? value : '';
   const trimmed = safe.trim();
   if (trimmed === '') {
-    if (docHas(doc, path)) doc.deleteIn(path);
+    if (hasOwn(obj, key)) delete obj[key];
     return;
   }
 
   const parsed = Number.parseInt(trimmed, 10);
   if (Number.isFinite(parsed)) {
-    doc.setIn(path, parsed);
+    obj[key] = parsed;
     return;
   }
 
-  if (docHas(doc, path)) doc.deleteIn(path);
+  if (hasOwn(obj, key)) delete obj[key];
 }
 
 function deepClone<T>(value: T): T {
@@ -150,7 +148,7 @@ function parseRedisCacheConfig(raw: unknown): RedisCacheConfig {
     password: '',
     db: '0',
     keyPrefix: 'cliproxy:usage:',
-    ttl: '86400',
+    ttl: '-1',
   };
   if (!raw) return defaultConfig;
   const record = asRecord(raw);
@@ -161,7 +159,7 @@ function parseRedisCacheConfig(raw: unknown): RedisCacheConfig {
     password: typeof record.password === 'string' ? record.password : '',
     db: typeof record.db === 'string' ? String(record.db) : String(record.db ?? '0'),
     keyPrefix: typeof record['key-prefix'] === 'string' ? record['key-prefix'] : 'cliproxy:usage:',
-    ttl: typeof record.ttl === 'string' ? String(record.ttl) : String(record.ttl ?? '86400'),
+    ttl: typeof record.ttl === 'string' ? String(record.ttl) : String(record.ttl ?? '-1'),
   };
 }
 
@@ -174,7 +172,7 @@ function serializeRedisCacheConfig(config: RedisCacheConfig): Record<string, unk
     !config.password &&
     config.db === '0' &&
     config.keyPrefix === 'cliproxy:usage:' &&
-    config.ttl === '86400'
+    config.ttl === '-1'
   ) {
     return undefined;
   }
@@ -186,7 +184,7 @@ function serializeRedisCacheConfig(config: RedisCacheConfig): Record<string, unk
     if (config.password) result.password = config.password;
     if (config.db !== '0') result.db = parseInt(config.db, 10) || 0;
     if (config.keyPrefix && config.keyPrefix !== 'cliproxy:usage:') result['key-prefix'] = config.keyPrefix;
-    if (config.ttl && config.ttl !== '86400') result.ttl = parseInt(config.ttl, 10) || 86400;
+    if (config.ttl && config.ttl !== '-1') result.ttl = parseInt(config.ttl, 10) || -1;
   }
   return result;
 }
@@ -365,7 +363,6 @@ export function useVisualConfig() {
         loggingToFile: Boolean(parsed['logging-to-file']),
         logsMaxTotalSizeMb: String(parsed['logs-max-total-size-mb'] ?? ''),
         usageStatisticsEnabled: Boolean(parsed['usage-statistics-enabled']),
-
         redisCache: parseRedisCacheConfig(parsed['usage-statistics-cache']),
 
         proxyUrl: typeof parsed['proxy-url'] === 'string' ? parsed['proxy-url'] : '',
@@ -404,122 +401,92 @@ export function useVisualConfig() {
   const applyVisualChangesToYaml = useCallback(
     (currentYaml: string): string => {
       try {
-        const doc = parseDocument(currentYaml);
-        if (doc.errors.length > 0) return currentYaml;
-        if (!isMap(doc.contents)) {
-          doc.contents = doc.createNode({}) as unknown as typeof doc.contents;
-        }
+        const parsed = (parseYaml(currentYaml) || {}) as Record<string, unknown>;
         const values = visualValues;
 
-        setStringInDoc(doc, ['host'], values.host);
-        setIntFromStringInDoc(doc, ['port'], values.port);
+        setString(parsed, 'host', values.host);
+        setIntFromString(parsed, 'port', values.port);
 
         if (
-          docHas(doc, ['tls']) ||
+          hasOwn(parsed, 'tls') ||
           values.tlsEnable ||
           values.tlsCert.trim() ||
           values.tlsKey.trim()
         ) {
-          ensureMapInDoc(doc, ['tls']);
-          setBooleanInDoc(doc, ['tls', 'enable'], values.tlsEnable);
-          setStringInDoc(doc, ['tls', 'cert'], values.tlsCert);
-          setStringInDoc(doc, ['tls', 'key'], values.tlsKey);
-          deleteIfMapEmpty(doc, ['tls']);
+          const tls = ensureRecord(parsed, 'tls');
+          setBoolean(tls, 'enable', values.tlsEnable);
+          setString(tls, 'cert', values.tlsCert);
+          setString(tls, 'key', values.tlsKey);
+          deleteIfEmpty(parsed, 'tls');
         }
 
         if (
-          docHas(doc, ['remote-management']) ||
+          hasOwn(parsed, 'remote-management') ||
           values.rmAllowRemote ||
           values.rmSecretKey.trim() ||
           values.rmDisableControlPanel ||
           values.rmPanelRepo.trim()
         ) {
-          ensureMapInDoc(doc, ['remote-management']);
-          setBooleanInDoc(doc, ['remote-management', 'allow-remote'], values.rmAllowRemote);
-          setStringInDoc(doc, ['remote-management', 'secret-key'], values.rmSecretKey);
-          setBooleanInDoc(
-            doc,
-            ['remote-management', 'disable-control-panel'],
-            values.rmDisableControlPanel
-          );
-          setStringInDoc(doc, ['remote-management', 'panel-github-repository'], values.rmPanelRepo);
-          if (docHas(doc, ['remote-management', 'panel-repo'])) {
-            doc.deleteIn(['remote-management', 'panel-repo']);
-          }
-          deleteIfMapEmpty(doc, ['remote-management']);
+          const rm = ensureRecord(parsed, 'remote-management');
+          setBoolean(rm, 'allow-remote', values.rmAllowRemote);
+          setString(rm, 'secret-key', values.rmSecretKey);
+          setBoolean(rm, 'disable-control-panel', values.rmDisableControlPanel);
+          setString(rm, 'panel-github-repository', values.rmPanelRepo);
+          if (hasOwn(rm, 'panel-repo')) delete rm['panel-repo'];
+          deleteIfEmpty(parsed, 'remote-management');
         }
 
-        setStringInDoc(doc, ['auth-dir'], values.authDir);
+        setString(parsed, 'auth-dir', values.authDir);
         if (values.apiKeysText !== baselineValues.apiKeysText) {
           const apiKeys = values.apiKeysText
             .split('\n')
             .map((key) => key.trim())
             .filter(Boolean);
           if (apiKeys.length > 0) {
-            doc.setIn(['api-keys'], apiKeys);
-          } else if (docHas(doc, ['api-keys'])) {
-            doc.deleteIn(['api-keys']);
+            parsed['api-keys'] = apiKeys;
+          } else if (hasOwn(parsed, 'api-keys')) {
+            delete parsed['api-keys'];
           }
         }
 
-        setBooleanInDoc(doc, ['debug'], values.debug);
+        setBoolean(parsed, 'debug', values.debug);
 
-        setBooleanInDoc(doc, ['commercial-mode'], values.commercialMode);
-        setBooleanInDoc(doc, ['logging-to-file'], values.loggingToFile);
-        setIntFromStringInDoc(doc, ['logs-max-total-size-mb'], values.logsMaxTotalSizeMb);
-        setBooleanInDoc(doc, ['usage-statistics-enabled'], values.usageStatisticsEnabled);
+        setBoolean(parsed, 'commercial-mode', values.commercialMode);
+        setBoolean(parsed, 'logging-to-file', values.loggingToFile);
+        setIntFromString(parsed, 'logs-max-total-size-mb', values.logsMaxTotalSizeMb);
+        setBoolean(parsed, 'usage-statistics-enabled', values.usageStatisticsEnabled);
 
         const redisCacheConfig = serializeRedisCacheConfig(values.redisCache);
         if (redisCacheConfig !== undefined) {
-          ensureMapInDoc(doc, ['usage-statistics-cache']);
-          const cachePath: YamlPath = ['usage-statistics-cache'];
-          if (typeof redisCacheConfig.enable === 'boolean') {
-            setBooleanInDoc(doc, [...cachePath, 'enable'], redisCacheConfig.enable);
-          }
-          if (redisCacheConfig.addr) {
-            setStringInDoc(doc, [...cachePath, 'addr'], redisCacheConfig.addr);
-          }
-          if (redisCacheConfig.password) {
-            setStringInDoc(doc, [...cachePath, 'password'], redisCacheConfig.password);
-          }
-          if (redisCacheConfig.db !== undefined) {
-            setIntFromStringInDoc(doc, [...cachePath, 'db'], String(redisCacheConfig.db));
-          }
-          if (redisCacheConfig['key-prefix']) {
-            setStringInDoc(doc, [...cachePath, 'key-prefix'], redisCacheConfig['key-prefix']);
-          }
-          if (redisCacheConfig.ttl !== undefined) {
-            setIntFromStringInDoc(doc, [...cachePath, 'ttl'], String(redisCacheConfig.ttl));
-          }
-          deleteIfMapEmpty(doc, cachePath);
-        } else if (docHas(doc, ['usage-statistics-cache'])) {
-          doc.deleteIn(['usage-statistics-cache']);
+          const cache = ensureRecord(parsed, 'usage-statistics-cache');
+          if (redisCacheConfig.enable !== undefined) cache.enable = redisCacheConfig.enable;
+          if (redisCacheConfig.addr) cache.addr = redisCacheConfig.addr;
+          if (redisCacheConfig.password) cache.password = redisCacheConfig.password;
+          if (redisCacheConfig.db !== undefined) cache.db = redisCacheConfig.db;
+          if (redisCacheConfig['key-prefix']) cache['key-prefix'] = redisCacheConfig['key-prefix'];
+          if (redisCacheConfig.ttl !== undefined) cache.ttl = redisCacheConfig.ttl;
+          deleteIfEmpty(parsed, 'usage-statistics-cache');
+        } else if (hasOwn(parsed, 'usage-statistics-cache')) {
+          delete parsed['usage-statistics-cache'];
         }
 
-        setStringInDoc(doc, ['proxy-url'], values.proxyUrl);
-        setBooleanInDoc(doc, ['force-model-prefix'], values.forceModelPrefix);
-        setIntFromStringInDoc(doc, ['request-retry'], values.requestRetry);
-        setIntFromStringInDoc(doc, ['max-retry-interval'], values.maxRetryInterval);
-        setBooleanInDoc(doc, ['ws-auth'], values.wsAuth);
+        setString(parsed, 'proxy-url', values.proxyUrl);
+        setBoolean(parsed, 'force-model-prefix', values.forceModelPrefix);
+        setIntFromString(parsed, 'request-retry', values.requestRetry);
+        setIntFromString(parsed, 'max-retry-interval', values.maxRetryInterval);
+        setBoolean(parsed, 'ws-auth', values.wsAuth);
 
-        if (
-          docHas(doc, ['quota-exceeded']) ||
-          !values.quotaSwitchProject ||
-          !values.quotaSwitchPreviewModel
-        ) {
-          ensureMapInDoc(doc, ['quota-exceeded']);
-          doc.setIn(['quota-exceeded', 'switch-project'], values.quotaSwitchProject);
-          doc.setIn(
-            ['quota-exceeded', 'switch-preview-model'],
-            values.quotaSwitchPreviewModel
-          );
-          deleteIfMapEmpty(doc, ['quota-exceeded']);
+        if (hasOwn(parsed, 'quota-exceeded') || !values.quotaSwitchProject || !values.quotaSwitchPreviewModel) {
+          const quota = ensureRecord(parsed, 'quota-exceeded');
+          quota['switch-project'] = values.quotaSwitchProject;
+          quota['switch-preview-model'] = values.quotaSwitchPreviewModel;
+          deleteIfEmpty(parsed, 'quota-exceeded');
         }
 
-        if (docHas(doc, ['routing']) || values.routingStrategy !== 'round-robin') {
-          ensureMapInDoc(doc, ['routing']);
-          doc.setIn(['routing', 'strategy'], values.routingStrategy);
-          deleteIfMapEmpty(doc, ['routing']);
+        if (hasOwn(parsed, 'routing') || values.routingStrategy !== 'round-robin') {
+          const routing = ensureRecord(parsed, 'routing');
+          routing.strategy = values.routingStrategy;
+          deleteIfEmpty(parsed, 'routing');
         }
 
         const keepaliveSeconds =
@@ -532,55 +499,42 @@ export function useVisualConfig() {
             : '';
 
         const streamingDefined =
-          docHas(doc, ['streaming']) || keepaliveSeconds.trim() || bootstrapRetries.trim();
+          hasOwn(parsed, 'streaming') || keepaliveSeconds.trim() || bootstrapRetries.trim();
         if (streamingDefined) {
-          ensureMapInDoc(doc, ['streaming']);
-          setIntFromStringInDoc(doc, ['streaming', 'keepalive-seconds'], keepaliveSeconds);
-          setIntFromStringInDoc(doc, ['streaming', 'bootstrap-retries'], bootstrapRetries);
-          deleteIfMapEmpty(doc, ['streaming']);
+          const streaming = ensureRecord(parsed, 'streaming');
+          setIntFromString(streaming, 'keepalive-seconds', keepaliveSeconds);
+          setIntFromString(streaming, 'bootstrap-retries', bootstrapRetries);
+          deleteIfEmpty(parsed, 'streaming');
         }
 
-        setIntFromStringInDoc(
-          doc,
-          ['nonstream-keepalive-interval'],
-          nonstreamKeepaliveInterval
-        );
+        setIntFromString(parsed, 'nonstream-keepalive-interval', nonstreamKeepaliveInterval);
 
         if (
-          docHas(doc, ['payload']) ||
+          hasOwn(parsed, 'payload') ||
           values.payloadDefaultRules.length > 0 ||
           values.payloadOverrideRules.length > 0 ||
           values.payloadFilterRules.length > 0
         ) {
-          ensureMapInDoc(doc, ['payload']);
+          const payload = ensureRecord(parsed, 'payload');
           if (values.payloadDefaultRules.length > 0) {
-            doc.setIn(
-              ['payload', 'default'],
-              serializePayloadRulesForYaml(values.payloadDefaultRules)
-            );
-          } else if (docHas(doc, ['payload', 'default'])) {
-            doc.deleteIn(['payload', 'default']);
+            payload.default = serializePayloadRulesForYaml(values.payloadDefaultRules);
+          } else if (hasOwn(payload, 'default')) {
+            delete payload.default;
           }
           if (values.payloadOverrideRules.length > 0) {
-            doc.setIn(
-              ['payload', 'override'],
-              serializePayloadRulesForYaml(values.payloadOverrideRules)
-            );
-          } else if (docHas(doc, ['payload', 'override'])) {
-            doc.deleteIn(['payload', 'override']);
+            payload.override = serializePayloadRulesForYaml(values.payloadOverrideRules);
+          } else if (hasOwn(payload, 'override')) {
+            delete payload.override;
           }
           if (values.payloadFilterRules.length > 0) {
-            doc.setIn(
-              ['payload', 'filter'],
-              serializePayloadFilterRulesForYaml(values.payloadFilterRules)
-            );
-          } else if (docHas(doc, ['payload', 'filter'])) {
-            doc.deleteIn(['payload', 'filter']);
+            payload.filter = serializePayloadFilterRulesForYaml(values.payloadFilterRules);
+          } else if (hasOwn(payload, 'filter')) {
+            delete payload.filter;
           }
-          deleteIfMapEmpty(doc, ['payload']);
+          deleteIfEmpty(parsed, 'payload');
         }
 
-        return doc.toString({ indent: 2, lineWidth: 120, minContentWidth: 0 });
+        return stringifyYaml(parsed, { indent: 2, lineWidth: 120, minContentWidth: 0 });
       } catch {
         return currentYaml;
       }
@@ -611,66 +565,18 @@ export function useVisualConfig() {
 }
 
 export const VISUAL_CONFIG_PROTOCOL_OPTIONS = [
-  {
-    value: '',
-    labelKey: 'config_management.visual.payload_rules.provider_default',
-    defaultLabel: 'Default',
-  },
-  {
-    value: 'openai',
-    labelKey: 'config_management.visual.payload_rules.provider_openai',
-    defaultLabel: 'OpenAI',
-  },
-  {
-    value: 'openai-response',
-    labelKey: 'config_management.visual.payload_rules.provider_openai_response',
-    defaultLabel: 'OpenAI Response',
-  },
-  {
-    value: 'gemini',
-    labelKey: 'config_management.visual.payload_rules.provider_gemini',
-    defaultLabel: 'Gemini',
-  },
-  {
-    value: 'claude',
-    labelKey: 'config_management.visual.payload_rules.provider_claude',
-    defaultLabel: 'Claude',
-  },
-  {
-    value: 'codex',
-    labelKey: 'config_management.visual.payload_rules.provider_codex',
-    defaultLabel: 'Codex',
-  },
-  {
-    value: 'antigravity',
-    labelKey: 'config_management.visual.payload_rules.provider_antigravity',
-    defaultLabel: 'Antigravity',
-  },
+  { value: '', label: '默认' },
+  { value: 'openai', label: 'OpenAI' },
+  { value: 'openai-response', label: 'OpenAI Response' },
+  { value: 'gemini', label: 'Gemini' },
+  { value: 'claude', label: 'Claude' },
+  { value: 'codex', label: 'Codex' },
+  { value: 'antigravity', label: 'Antigravity' },
 ] as const;
 
 export const VISUAL_CONFIG_PAYLOAD_VALUE_TYPE_OPTIONS = [
-  {
-    value: 'string',
-    labelKey: 'config_management.visual.payload_rules.value_type_string',
-    defaultLabel: 'String',
-  },
-  {
-    value: 'number',
-    labelKey: 'config_management.visual.payload_rules.value_type_number',
-    defaultLabel: 'Number',
-  },
-  {
-    value: 'boolean',
-    labelKey: 'config_management.visual.payload_rules.value_type_boolean',
-    defaultLabel: 'Boolean',
-  },
-  {
-    value: 'json',
-    labelKey: 'config_management.visual.payload_rules.value_type_json',
-    defaultLabel: 'JSON',
-  },
-] as const satisfies ReadonlyArray<{
-  value: PayloadParamValueType;
-  labelKey: string;
-  defaultLabel: string;
-}>;
+  { value: 'string', label: '字符串' },
+  { value: 'number', label: '数字' },
+  { value: 'boolean', label: '布尔' },
+  { value: 'json', label: 'JSON' },
+] as const satisfies ReadonlyArray<{ value: PayloadParamValueType; label: string }>;

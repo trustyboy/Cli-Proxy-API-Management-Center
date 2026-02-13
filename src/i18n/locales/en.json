@@ -771,11 +771,6 @@
     "api_details": "API Details",
     "by_hour": "By Hour",
     "by_day": "By Day",
-    "range_filter": "Time Range",
-    "range_all": "All Time",
-    "range_7h": "Last 7 Hours",
-    "range_24h": "Last 24 Hours",
-    "range_7d": "Last 7 Days",
     "refresh": "Refresh",
     "export": "Export",
     "import": "Import",
@@ -954,7 +949,7 @@
           "redis_password_placeholder": "Leave empty for no password",
           "redis_db": "Redis Database Number",
           "redis_ttl": "Cache TTL (seconds)",
-          "redis_ttl_hint": "Statistics expiration time, default 86400 seconds (1 day)",
+          "redis_ttl_hint": "Statistics expiration time, -1 means permanent",
           "logs_max_size": "Log File Size Limit (MB)"
         },
         "redis_cache": {
@@ -967,7 +962,7 @@
           "password_placeholder": "Leave empty for no password",
           "db": "Redis Database Number",
           "ttl": "Cache TTL (seconds)",
-          "ttl_hint": "Statistics expiration time, default 86400 seconds (1 day)"
+          "ttl_hint": "Statistics expiration time, -1 means permanent"
         },
         "network": {
           "title": "Network Configuration",
@@ -1041,17 +1036,6 @@
         "add_param": "Add Parameter",
         "no_rules": "No rules",
         "add_rule": "Add Rule",
-        "provider_default": "Default",
-        "provider_openai": "OpenAI",
-        "provider_openai_response": "OpenAI Response",
-        "provider_gemini": "Gemini",
-        "provider_claude": "Claude",
-        "provider_codex": "Codex",
-        "provider_antigravity": "Antigravity",
-        "value_type_string": "String",
-        "value_type_number": "Number",
-        "value_type_boolean": "Boolean",
-        "value_type_json": "JSON",
         "value_string": "String value",
         "value_number": "Number value (e.g., 0.7)",
         "value_boolean": "true or false",

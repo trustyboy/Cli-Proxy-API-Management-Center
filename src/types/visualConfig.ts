@@ -57,7 +57,6 @@ export type VisualConfigValues = {
   loggingToFile: boolean;
   logsMaxTotalSizeMb: string;
   usageStatisticsEnabled: boolean;
-  redisCache: RedisCacheConfig;
   proxyUrl: string;
   forceModelPrefix: boolean;
   requestRetry: string;
@@ -70,6 +69,7 @@ export type VisualConfigValues = {
   payloadOverrideRules: PayloadRule[];
   payloadFilterRules: PayloadFilterRule[];
   streaming: StreamingConfig;
+  redisCache: RedisCacheConfig;
 };
 
 export const makeClientId = () => {
@@ -100,7 +100,7 @@ export const DEFAULT_VISUAL_VALUES: VisualConfigValues = {
     password: '',
     db: '0',
     keyPrefix: 'cliproxy:usage:',
-    ttl: '86400',
+    ttl: '-1',
   },
   proxyUrl: '',
   forceModelPrefix: false,

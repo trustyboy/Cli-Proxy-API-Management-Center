@@ -771,11 +771,6 @@
     "api_details": "API 详细统计",
     "by_hour": "按小时",
     "by_day": "按天",
-    "range_filter": "时间范围",
-    "range_all": "全部时间",
-    "range_7h": "最近7小时",
-    "range_24h": "最近24小时",
-    "range_7d": "最近7天",
     "refresh": "刷新",
     "export": "导出数据",
     "import": "导入数据",
@@ -954,7 +949,7 @@
           "redis_password_placeholder": "留空表示无密码",
           "redis_db": "Redis 数据库编号",
           "redis_ttl": "缓存过期时间 (秒)",
-          "redis_ttl_hint": "统计数据过期时间，默认 86400 秒 (1天)",
+          "redis_ttl_hint": "统计数据过期时间，-1 表示永久",
           "logs_max_size": "日志文件大小限制 (MB)"
         },
         "redis_cache": {
@@ -967,7 +962,7 @@
           "password_placeholder": "留空表示无密码",
           "db": "Redis 数据库编号",
           "ttl": "缓存过期时间 (秒)",
-          "ttl_hint": "统计数据过期时间，默认 86400 秒 (1天)"
+          "ttl_hint": "统计数据过期时间，-1 表示永久"
         },
         "network": {
           "title": "网络配置",
@@ -1041,17 +1036,6 @@
         "add_param": "添加参数",
         "no_rules": "暂无规则",
         "add_rule": "添加规则",
-        "provider_default": "默认",
-        "provider_openai": "OpenAI",
-        "provider_openai_response": "OpenAI Response",
-        "provider_gemini": "Gemini",
-        "provider_claude": "Claude",
-        "provider_codex": "Codex",
-        "provider_antigravity": "Antigravity",
-        "value_type_string": "字符串",
-        "value_type_number": "数字",
-        "value_type_boolean": "布尔",
-        "value_type_json": "JSON",
         "value_string": "字符串值",
         "value_number": "数字值 (如 0.7)",
         "value_boolean": "true 或 false",
